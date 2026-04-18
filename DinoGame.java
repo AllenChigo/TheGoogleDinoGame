@@ -17,15 +17,17 @@ public class DinoGame extends JPanel implements ActionListener, KeyListener {
     // Obstacles
     private ArrayList<Rectangle> obstacles = new ArrayList<>();
     private int obstacleTimer = 0;
+    private int nextSpawnTime = 0; // Pre-calculated next spawn time
     private int score = 0;
     private boolean gameOver = false;
     private Timer timer;
+    private Random random = new Random(); // Reusable Random instance
     
     // Difficulty Settings
     private final int BASE_SPAWN_DELAY = 50;
     private final int BASE_SPAWN_VARIATION = 50;
     private final int BASE_OBSTACLE_SPEED = 8;
-    private final int DIFFICULTY_INCREASE_INTERVAL = 10; // Every 10 points
+    private final int DIFFICULTY_INCREASE_INTERVAL = 10;
 
     public DinoGame() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
@@ -34,6 +36,17 @@ public class DinoGame extends JPanel implements ActionListener, KeyListener {
         addKeyListener(this);
         timer = new Timer(20, this); // ~50 FPS
         timer.start();
+        calculateNextSpawnTime();
+    }
+    
+    /**
+     * Pre-calculate the next spawn time to make timing less predictable
+     * This is called once per spawn instead of every frame
+     */
+    private void calculateNextSpawnTime() {
+        int spawnDelay = getCurrentSpawnDelay();
+        int spawnVariation = Math.max(BASE_SPAWN_VARIATION - (score / DIFFICULTY_INCREASE_INTERVAL) * 5, 10);
+        nextSpawnTime = obstacleTimer + spawnDelay + random.nextInt(spawnVariation);
     }
     
     /**
@@ -105,14 +118,11 @@ public class DinoGame extends JPanel implements ActionListener, KeyListener {
             isJumping = false;
         }
 
-        // Spawn Obstacles with difficulty scaling
+        // Spawn Obstacles based on pre-calculated timing
         obstacleTimer++;
-        int spawnDelay = getCurrentSpawnDelay();
-        int spawnVariation = Math.max(BASE_SPAWN_VARIATION - (score / DIFFICULTY_INCREASE_INTERVAL) * 5, 10);
-        
-        if (obstacleTimer > spawnDelay + new Random().nextInt(spawnVariation)) {
+        if (obstacleTimer >= nextSpawnTime) {
             obstacles.add(new Rectangle(WIDTH, 200, 20, 40));
-            obstacleTimer = 0;
+            calculateNextSpawnTime(); // Calculate next spawn time upfront
         }
 
         // Move Obstacles & Check Collision
@@ -144,6 +154,7 @@ public class DinoGame extends JPanel implements ActionListener, KeyListener {
                 score = 0;
                 gameOver = false;
                 obstacleTimer = 0;
+                calculateNextSpawnTime();
                 timer.start();
             } else if (!isJumping) {
                 dinoVY = -15; // Jump Force
