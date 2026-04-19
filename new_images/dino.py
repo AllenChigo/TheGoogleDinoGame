@@ -39,9 +39,12 @@ except:
 class Game:
     def __init__(self):
         self.reset()
+        # Add to your Game.__init__
+        self.ground_x = 0
+        self.ground_img = pygame.image.load("ground.png") # A 800px wide texture
 
     def reset(self):
-        self.dino_y = GROUND_Y - 40
+        self.dino_y = GROUND_Y - 38
         self.dino_vy = 0
         self.is_jumping = False
         self.obstacles = []
@@ -59,12 +62,16 @@ class Game:
     def spawn_obstacle(self):
         w = random.randint(20, 50)
         h = random.randint(30, 70)
-        rect = pygame.Rect(WIDTH, GROUND_Y - h, w, h)
+        rect = pygame.Rect(WIDTH, GROUND_Y - h + 2, w, h)
         self.obstacles.append(rect)
 
     def update(self):
         if self.game_over:
             return
+
+        self.ground_x -= speed  # Move at same speed as obstacles
+        if self.ground_x <= -WIDTH:
+            self.ground_x = 0
 
         # Dino Physics
         self.dino_y += self.dino_vy
@@ -96,7 +103,11 @@ class Game:
 
     def draw(self):
         screen.fill(WHITE)
-        pygame.draw.line(screen, LIGHT_GRAY, (0, GROUND_Y), (WIDTH, GROUND_Y))
+        # Change this line in the draw() function:
+        pygame.draw.line(screen, LIGHT_GRAY, (0, GROUND_Y), (WIDTH, GROUND_Y), 3)
+
+        screen.blit(self.ground_img, (self.ground_x, GROUND_Y - 5))
+        screen.blit(self.ground_img, (self.ground_x + WIDTH, GROUND_Y - 5))
 
         # Draw Dino
         if dino_img:
